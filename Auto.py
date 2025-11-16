@@ -9,13 +9,12 @@ except ImportError:
     os.system("pip install pyautogui")
     import pyautogui
 
-# ===== 0️⃣ CẤU HÌNH =====
-# File tạm để lưu danh sách LD cần mở lại sau khi restart
+# ===== CẤU HÌNH =====
+
 RESTART_LIST_FILE = "ld_launch_list.txt" 
 TARGET_HOUR = 18   # Giờ 18h (6 PM)
 TARGET_MINUTE = 30 # Phút 30
 
-# ===== 1️⃣ Tự phát hiện ldconsole.exe =====
 def find_ldconsole():
     """Tự động tìm ldconsole.exe trong ổ C và D."""
     possible_drives = ["C:\\", "D:\\"]
@@ -26,16 +25,14 @@ def find_ldconsole():
     print("[LỖI] Không tìm thấy ldconsole.exe")
     return None
 
-# Khởi chạy tìm kiếm ldconsole một lần duy nhất
 LDCONSOLE = find_ldconsole()
 
-# ===== 2️⃣ CÁC HÀM LDCONSOLE =====
+# ===== CÁC HÀM LDCONSOLE =====
 def get_ld_list():
     """Lấy danh sách các giả lập LDPlayer."""
     if not LDCONSOLE:
         return []
     try:
-        # Thêm encoding='utf-8' để tránh lỗi ký tự
         result = subprocess.run(
             [LDCONSOLE, "list2"],
             capture_output=True, text=True, timeout=8, encoding='utf-8'
@@ -50,7 +47,6 @@ def get_ld_list():
             name = parts[1]
             is_running = parts[4] == "1"
             pid = int(parts[2])
-            # Bỏ qua các tab rỗng (PID=0 và tên rỗng)
             if pid == 0 and parts[1].strip() == "":
                 continue
             data.append({
@@ -88,10 +84,9 @@ def uwindow():
 def restart_computer():
     """Khởi động lại máy tính sau 10 giây."""
     print("Đang khởi động lại máy tính sau 10 giây...")
-    # /r = restart, /t 10 = 10 giây
     os.system("shutdown /r /t 10")
 
-# ===== 3️⃣ HÀM CLICK CHUỘT (RunTool) =====
+# ===== HÀM CLICK CHUỘT (RunTool) =====
 def RunTool():
     """Thực hiện chuỗi thao tác click chuột."""
     print("Bắt đầu chạy tool (click chuột)...")
@@ -107,6 +102,8 @@ def RunTool():
         pyautogui.click(240, 60); time.sleep(0.5)
         pyautogui.click(265, 60); time.sleep(0.5)
         pyautogui.click(290, 60); time.sleep(0.5)
+
+        uwindow()
 
         pyautogui.click(330, 60); time.sleep(10)
         pyautogui.click(310, 170); time.sleep(2)
@@ -163,15 +160,9 @@ def RunTool():
         print(f"[LỖI] Lỗi xảy ra trong RunTool (pyautogui): {e}")
 
 
-# ===== 4️⃣ LOGIC MỚI (TÁC VỤ KHỞI ĐỘNG & HẸN GIỜ) =====
+# ===== LOGIC MỚI (TÁC VỤ KHỞI ĐỘNG & HẸN GIỜ) =====
 
 def trigger_scheduled_restart():
-    """
-    Hàm này được gọi khi đến giờ hẹn.
-    1. Lưu danh sách LD chưa chạy vào file.
-    2. Tắt các LD đang chạy.
-    3. Khởi động lại PC.
-    """
     if not LDCONSOLE:
         print("[LỖI] Không có LDCONSOLE, không thể thực hiện restart.")
         return
@@ -182,7 +173,6 @@ def trigger_scheduled_restart():
         print("Không có dữ liệu LDPlayer, bỏ qua.")
         return
 
-    # 1. Lưu danh sách các tab CHƯA CHẠY
     not_running_tabs = [ld['index'] for ld in ld_list if not ld['running']]
     try:
         with open(RESTART_LIST_FILE, 'w') as f:
@@ -198,18 +188,12 @@ def trigger_scheduled_restart():
         print(f"Đang tắt {len(running_tabs)} tab (đang chạy)...")
         for idx in running_tabs:
             ld_quit(idx)
-        time.sleep(15) # Chờ 15s để các tab tắt hẳn
+        time.sleep(15)
     else:
         print("Không có tab nào đang chạy.")
-
-    # 3. Khởi động lại PC
     restart_computer()
 
 def check_and_run_startup_task():
-    """
-    Chạy 1 lần duy nhất khi script khởi động.
-    Kiểm tra file restart, nếu có thì mở LD, chạy tool và xóa file.
-    """
     if not LDCONSOLE:
         print("[LỖI] Không có LDCONSOLE, không thể chạy tác vụ khởi động.")
         return
@@ -226,7 +210,7 @@ def check_and_run_startup_task():
                 print(f"Sẽ mở {len(indices_to_launch)} tab...")
                 for idx in indices_to_launch:
                     ld_launch(idx)
-                    time.sleep(5) # Cách 5s mỗi tab
+                    time.sleep(7)
                 
                 print("Đã mở xong các tab. Chờ 30s để ổn định...")
                 time.sleep(30)
@@ -237,8 +221,7 @@ def check_and_run_startup_task():
                 time.sleep(300)
                 
                 RunTool()
-
-            # Xóa file sau khi hoàn tất (kể cả khi file rỗng)
+                
             os.remove(RESTART_LIST_FILE)
             print(f"Đã xử lý và xóa file {RESTART_LIST_FILE}.")
         
@@ -248,35 +231,25 @@ def check_and_run_startup_task():
     else:
         print("Không tìm thấy file restart. Chuyển sang chế độ chờ hẹn giờ.")
 
-# ===== 5️⃣ VÒNG LẶP CHÍNH =====
+# ===== VÒNG LẶP CHÍNH =====
 if __name__ == "__main__":
     os.system("cls")
     print("===== SCRIPT TỰ ĐỘNG KHỞI ĐỘNG LẠI LDPLAYER =====")
     
     if not LDCONSOLE:
-        # Dừng hẳn nếu không tìm thấy ldconsole.exe
         input("[LỖI NGHIÊM TRỌNG] Không tìm thấy 'ldconsole.exe'. Nhấn Enter để thoát...")
     else:
-        # 1. Chạy tác vụ khởi động (chỉ chạy 1 lần)
         check_and_run_startup_task()
-        
-        # 2. Vào vòng lặp chờ đến giờ restart
         print(f"\nScript đang chạy, sẽ thực hiện restart PC lúc {TARGET_HOUR}:{TARGET_MINUTE:02d} hàng ngày.")
         
         while True:
             try:
                 now = datetime.now()
-                # Kiểm tra xem đã đến đúng giờ và đúng phút chưa
                 if now.hour == TARGET_HOUR and now.minute == TARGET_MINUTE:
                     trigger_scheduled_restart()
-                    # Khi gọi hàm restart, script sẽ dừng ở đây vì PC sắp tắt
                     break 
-                
-                # In thông báo chờ mỗi 10 phút để biết script vẫn chạy
                 if now.minute % 10 == 0 and now.second < 30:
                      print(f"[{now.strftime('%H:%M:%S')}] Đang chờ đến {TARGET_HOUR}:{TARGET_MINUTE:02d} để restart...")
-
-                
                 time.sleep(30)
             
             except KeyboardInterrupt:
@@ -285,3 +258,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"[LỖI VÒNG LẶP CHÍNH] {e}")
                 time.sleep(60) 
+
