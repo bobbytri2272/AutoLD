@@ -173,7 +173,10 @@ def trigger_scheduled_restart():
         print("Không có dữ liệu LDPlayer, bỏ qua.")
         return
 
-    not_running_tabs = [ld['index'] for ld in ld_list if not ld['running']]
+    not_running_tabs = [
+    ld['index'] for ld in ld_list
+    if not ld['running'] and ld['index'] != "0"
+    ]
     try:
         with open(RESTART_LIST_FILE, 'w') as f:
             for idx in not_running_tabs:
@@ -258,6 +261,7 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"[LỖI VÒNG LẶP CHÍNH] {e}")
                 time.sleep(60) 
+
 
 
 
