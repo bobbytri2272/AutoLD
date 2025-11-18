@@ -13,7 +13,7 @@ except ImportError:
 
 RESTART_LIST_FILE = "ld_launch_list.txt" 
 TARGET_HOUR = 18   # Giờ 18h (6 PM)
-TARGET_MINUTE = 20 # Phút 30
+TARGET_MINUTE = 30 # Phút 30
 
 def find_ldconsole():
     """Tự động tìm ldconsole.exe trong ổ C và D."""
@@ -258,5 +258,6 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"[LỖI VÒNG LẶP CHÍNH] {e}")
                 time.sleep(60) 
+
 
 
